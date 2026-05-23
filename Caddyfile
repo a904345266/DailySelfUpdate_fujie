@@ -1,0 +1,23 @@
+# Caddy reverse proxy with automatic HTTPS (Let's Encrypt).
+#
+# {$SITE_ADDRESS} comes from the env (set in .env). Examples:
+#   yourdomain.com           → standard HTTPS on 443 (needs ICP备案 in 大陆)
+#   yourdomain.com:8443      → HTTPS on a high port (avoids 80/443 备案拦截)
+#
+# Path routing on ONE domain: /api/* → backend, everything else → frontend.
+# The frontend is built with NEXT_PUBLIC_API_BASE_URL=/api so requests are
+# same-origin — no CORS, one certificate.
+
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# Backend API
+	handle /api/* {
+		reverse_proxy backend:3001
+	}
+
+	# Frontend (Next.js) — everything else
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

@@ -1,0 +1,31 @@
+# HTTPS overlay. Use TOGETHER with the base prod file:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml --env-file .env up -d --build
+#
+# Caddy terminates HTTPS and proxies to frontend/backend on the internal
+# Docker network, so they no longer need to publish 3000/3001 publicly.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    environment:
+      # e.g. SITE_ADDRESS=yourdomain.com  or  yourdomain.com:8443
+      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS is required (your domain, optionally :port)}
+    ports:
+      - "80:80"
+      - "443:443"
+      # If you use a high port (e.g. :8443) to avoid 备案, also map it:
+      # - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  # When fronted by Caddy, the app ports don't need public exposure.
+  # (Leaving them published is harmless for now; tighten later if you want.)
+
+volumes:
+  caddy-data:
+  caddy-config:

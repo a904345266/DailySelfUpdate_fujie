@@ -217,3 +217,38 @@ VoiceInput 会自动检测并在 Firefox 上显示提示。文字键盘输入始
 - 日历视图（目前是时间轴）
 - PWA / 离线支持
 - E2E 测试（Playwright）
+
+---
+
+## HTTPS 部署（Caddy 自动证书，语音功能必需）
+
+语音识别（Web Speech API）只在 HTTPS 或 localhost 下可用。生产用 Caddy
+自动申请 Let's Encrypt 证书，并在单域名上做路径分流。
+
+### 前提
+- 一个域名，A 记录指向服务器公网 IP
+- 大陆服务器用标准 443 端口需 ICP 备案；用高端口（如 :8443）通常免备案
+
+### 步骤（服务器上）
+```bash
+cd ~/Projects/DailySelfUpdate
+git pull
+
+# 1. 前端必须用相对路径 /api（同源，免 CORS），并设 HTTPS 域名
+#    编辑 .env：
+#      NEXT_PUBLIC_API_BASE_URL=/api
+#      FRONTEND_URL=https://yourdomain.com        （或 https://yourdomain.com:8443）
+#      SITE_ADDRESS=yourdomain.com                （或 yourdomain.com:8443）
+nano .env
+
+# 2. 带 Caddy 一起启动（叠加 caddy overlay）
+docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml --env-file .env up -d --build
+
+# 3. Caddy 会自动申请证书（首次几十秒）。验证：
+curl -I https://yourdomain.com
+```
+
+之后访问 `https://yourdomain.com`，语音功能即可用。
+
+> 注意：改了 `NEXT_PUBLIC_API_BASE_URL` 必须重新 build 前端（它是构建期注入的）。
+> 上面命令带了 `--build` 会自动重建。
