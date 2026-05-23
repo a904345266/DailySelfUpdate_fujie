@@ -11,6 +11,9 @@ FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Ensure public/ exists even if the project ships none, so the runtime COPY
+# below never fails (Next.js doesn't require a public dir).
+RUN mkdir -p public
 # Public env vars (must be present at build time so they're inlined)
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
