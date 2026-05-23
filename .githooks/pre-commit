@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Lightweight secret guard — blocks commits that contain real .env files or
+# hardcoded API keys. No external tools required.
+set -euo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+fail=0
+
+# 1. Block any real .env file (allow *.example templates).
+while IFS= read -r f; do
+  case "$f" in
+    *.example) ;;
+    *.env|*/.env|.env|*.env.local|*/.env.local|*.env.prod|*/.env.prod|*.env.production|*/.env.production)
+      echo "✗ 拒绝提交环境文件: $f （应被 .gitignore 忽略，请勿强制添加）"
+      fail=1 ;;
+  esac
+done <<< "$staged"
+
+# 2. Scan staged content for obvious secret patterns.
+#    sk-... tokens, AWS keys, private key headers.
+patterns='(sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)'
+while IFS= read -r f; do
+  case "$f" in
+    *.example|*.md|.githooks/*) continue ;;  # templates/docs/this hook may mention patterns
+  esac
+  if git show ":$f" 2>/dev/null | grep -nEq "$patterns"; then
+    echo "✗ 文件 $f 中疑似包含密钥（sk-/AKIA/PRIVATE KEY），已拦截。"
+    echo "  如确认是误报，可用: git commit --no-verify"
+    fail=1
+  fi
+done <<< "$staged"
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "提交被 pre-commit 安全钩子阻止。请移除密钥后重试。"
+  exit 1
+fi
+exit 0

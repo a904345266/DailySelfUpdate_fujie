@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// User & Auth
+// ============================================================
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  username      String?
+  passwordHash  String   @map("password_hash")
+  emailVerified Boolean  @default(false) @map("email_verified")
+  avatarUrl     String?  @map("avatar_url")
+  tier          String   @default("free") // free | vip — gates which AI provider is used
+  vipExpiresAt  DateTime? @map("vip_expires_at") // null = permanent vip; otherwise vip is valid until this time
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  lastLoginAt   DateTime? @map("last_login_at")
+
+  preferences         UserPreferences?
+  workRecords         WorkRecord[]
+  friendRecords       FriendRecord[]
+  partnerRecords      PartnerRecord[]
+  gratitudeRecords    GratitudeRecord[]
+  dailyReflections    DailyReflection[]
+  weeklySummaries     WeeklySummary[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model UserPreferences {
+  userId              String   @id @map("user_id") @db.Uuid
+  language            String   @default("zh-CN")
+  timezone            String   @default("Asia/Shanghai")
+  theme               String   @default("light") // light | dark | auto
+  voiceEnabled        Boolean  @default(true) @map("voice_enabled")
+  voiceLanguage       String   @default("zh-CN") @map("voice_language")
+  reminderMorning     String   @default("08:00") @map("reminder_morning")
+  reminderNoon        String   @default("12:00") @map("reminder_noon")
+  reminderEvening     String   @default("21:00") @map("reminder_evening")
+  notificationEnabled Boolean  @default(true) @map("notification_enabled")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ============================================================
+// Daily records
+// ============================================================
+
+model WorkRecord {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  date           DateTime @db.Date
+  content        String
+  category       String   // achievement | challenge | learning | routine
+  emotion        String   // satisfied | anxious | neutral | excited
+  importance     Int      // 1-5
+  timeSpent      String?  @map("time_spent")
+  tags           String[] @default([])
+  followUpAction String?  @map("follow_up_action")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("work_records")
+}
+
+model FriendRecord {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  date            DateTime @db.Date
+  friendName      String   @map("friend_name")
+  interactionType String   @map("interaction_type") // chat | meet | call | message
+  content         String
+  emotion         String
+  importance      Int      // 1-5
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("friend_records")
+}
+
+model PartnerRecord {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  date            DateTime @db.Date
+  partnerName     String   @map("partner_name")
+  interactionType String   @map("interaction_type") // quality_time | conversation | argument | support
+  content         String
+  emotion         String
+  importance      Int      // 1-5
+  resolved        Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("partner_records")
+}
+
+model GratitudeRecord {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  date              DateTime @db.Date
+  content           String
+  category          String   // nature | person | achievement | moment | health
+  emotion           String
+  impactLevel       Int      @map("impact_level") // 1-5
+  photoUrl          String?  @map("photo_url")
+  locationLatitude  Decimal? @map("location_latitude") @db.Decimal(10, 8)
+  locationLongitude Decimal? @map("location_longitude") @db.Decimal(11, 8)
+  locationAddress   String?  @map("location_address")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("gratitude_records")
+}
+
+model DailyReflection {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  date                DateTime @db.Date
+  morningGoal         String?  @map("morning_goal")
+  morningMood         String?  @map("morning_mood")
+  noonCheck           String?  @map("noon_check")
+  noonProgress        Int?     @map("noon_progress") // 0-100
+  eveningReflection   String?  @map("evening_reflection")
+  eveningAchievements String[] @default([]) @map("evening_achievements")
+  eveningChallenges   String[] @default([]) @map("evening_challenges")
+  overallRating       Int?     @map("overall_rating") // 1-5
+  sleepPrediction     String?  @map("sleep_prediction")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("daily_reflections")
+}
+
+model WeeklySummary {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  weekStart            DateTime @map("week_start") @db.Date
+  weekEnd              DateTime @map("week_end") @db.Date
+  workAnalysis         Json     @map("work_analysis")
+  relationshipAnalysis Json     @map("relationship_analysis")
+  gratitudeAnalysis    Json     @map("gratitude_analysis")
+  emotionalAnalysis    Json     @map("emotional_analysis")
+  growthTracking       Json?    @map("growth_tracking")
+  aiRecommendations    Json     @map("ai_recommendations")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
+  @@map("weekly_summaries")
+}
