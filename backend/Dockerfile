@@ -9,6 +9,8 @@ RUN npm ci
 # ---- build ----
 FROM node:20-alpine AS build
 WORKDIR /app
+# Prisma engines need openssl on Alpine, else the schema engine fails to load.
+RUN apk add --no-cache openssl libc6-compat
 COPY --from=deps /app/node_modules ./node_modules
 COPY tsconfig.json ./
 COPY prisma ./prisma
@@ -21,6 +23,8 @@ RUN npm run build
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+# Prisma migrate deploy + client need openssl at runtime too.
+RUN apk add --no-cache openssl libc6-compat
 # Install only runtime deps
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev && npm cache clean --force
