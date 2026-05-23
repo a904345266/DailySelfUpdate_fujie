@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   computeWeeklySummary,
   generateAndPersistWeeklySummary,
+  getSavedCoverImage,
   getTrends,
 } from '../services/analysisService';
 
@@ -11,8 +12,11 @@ const dateField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式必须为
 export async function getWeekly(req: Request, res: Response, next: NextFunction) {
   try {
     const weekStart = dateField.parse(req.params.weekStart);
-    const analysis = await computeWeeklySummary(req.userId!, weekStart);
-    res.json({ success: true, analysis });
+    const [analysis, coverImageUrl] = await Promise.all([
+      computeWeeklySummary(req.userId!, weekStart),
+      getSavedCoverImage(req.userId!, weekStart),
+    ]);
+    res.json({ success: true, analysis, coverImageUrl });
   } catch (e) { next(e); }
 }
 

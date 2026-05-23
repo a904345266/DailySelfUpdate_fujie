@@ -61,6 +61,20 @@ const envSchema = z.object({
   // The current valid redemption code. Empty → redemption disabled.
   VIP_TRIAL_CODE: z.string().optional(),
   VIP_TRIAL_DURATION_HOURS: z.coerce.number().default(24),
+
+  // --- Weekly summary cover image (text-to-image; ALL OPTIONAL) ---
+  // If disabled/unconfigured, summaries simply have no cover image — no error.
+  IMAGE_ENABLED: z
+    .string()
+    .default('false')
+    .transform((v) => v === 'true' || v === '1'),
+  IMAGE_TIMEOUT_MS: z.coerce.number().default(30000),
+  // OpenAI-style /v1/images/generations endpoint (works with new-api gateway,
+  // 智谱 CogView via gateway, OpenAI DALL·E, etc.)
+  IMAGE_API_KEY: z.string().optional(),
+  IMAGE_BASE_URL: z.string().optional(),
+  IMAGE_MODEL: z.string().default('cogview-3'),
+  IMAGE_SIZE: z.string().default('1024x1024'),
 });
 
 const parsed = envSchema.safeParse(process.env);

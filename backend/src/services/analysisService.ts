@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma';
 import { addDays, isoDate, weekBoundsFromAny } from '../utils/week';
 import { generateInsights, type UserTier } from './ai';
+import { generateCoverImage } from './ai/imageService';
 import { computeEffectiveTier } from './vipService';
 
 // ============================================================
@@ -242,6 +243,16 @@ export async function computeWeeklySummary(userId: string, weekStartStr: string)
   return buildAnalysis(weekStart, weekEnd, data);
 }
 
+/** The cover image saved from a previous `generate` call, if any. */
+export async function getSavedCoverImage(userId: string, weekStartStr: string): Promise<string | null> {
+  const { weekStart } = weekBoundsFromAny(weekStartStr);
+  const row = await prisma.weeklySummary.findUnique({
+    where: { userId_weekStart: { userId, weekStart } },
+    select: { coverImageUrl: true },
+  });
+  return row?.coverImageUrl ?? null;
+}
+
 export async function generateAndPersistWeeklySummary(userId: string, weekStartStr: string) {
   const { weekStart, weekEnd } = weekBoundsFromAny(weekStartStr);
   const data = await loadWeekData(userId, weekStart, weekEnd);
@@ -254,7 +265,12 @@ export async function generateAndPersistWeeklySummary(userId: string, weekStartS
     select: { tier: true, vipExpiresAt: true },
   });
   const tier = (user ? computeEffectiveTier(user) : 'free') as UserTier;
-  const outcome = await generateInsights(analysis, tier);
+
+  // Insights + cover image run concurrently; both degrade gracefully on failure.
+  const [outcome, cover] = await Promise.all([
+    generateInsights(analysis, tier),
+    generateCoverImage(analysis),
+  ]);
 
   // The returned analysis carries the (possibly AI-generated) recommendations
   // and a source flag, so the frontend can show "AI 生成" vs "规则生成".
@@ -276,6 +292,9 @@ export async function generateAndPersistWeeklySummary(userId: string, weekStartS
       emotionalAnalysis: analysis.emotional as object,
       growthTracking: analysis.growth as object,
       aiRecommendations,
+      // Only overwrite the cover when we successfully generated a new one,
+      // so a transient image failure doesn't wipe an existing cover.
+      ...(cover.url ? { coverImageUrl: cover.url } : {}),
     },
     create: {
       userId,
@@ -287,10 +306,17 @@ export async function generateAndPersistWeeklySummary(userId: string, weekStartS
       emotionalAnalysis: analysis.emotional as object,
       growthTracking: analysis.growth as object,
       aiRecommendations,
+      coverImageUrl: cover.url,
     },
   });
 
-  return { analysis, summary: persisted, insightSource: outcome.source, provider: outcome.provider };
+  return {
+    analysis,
+    summary: persisted,
+    insightSource: outcome.source,
+    provider: outcome.provider,
+    coverImageUrl: persisted.coverImageUrl,
+  };
 }
 
 // ============================================================

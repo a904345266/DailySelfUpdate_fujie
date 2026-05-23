@@ -56,6 +56,13 @@ services:
       # --- VIP trial redemption ---
       VIP_TRIAL_CODE: ${VIP_TRIAL_CODE:-}
       VIP_TRIAL_DURATION_HOURS: ${VIP_TRIAL_DURATION_HOURS:-24}
+      # --- Weekly summary cover image (text-to-image; optional) ---
+      IMAGE_ENABLED: ${IMAGE_ENABLED:-false}
+      IMAGE_TIMEOUT_MS: ${IMAGE_TIMEOUT_MS:-30000}
+      IMAGE_API_KEY: ${IMAGE_API_KEY:-}
+      IMAGE_BASE_URL: ${IMAGE_BASE_URL:-}
+      IMAGE_MODEL: ${IMAGE_MODEL:-cogview-3}
+      IMAGE_SIZE: ${IMAGE_SIZE:-1024x1024}
     ports:
       - "3001:3001"
 

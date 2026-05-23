@@ -52,6 +52,7 @@ export default function WeeklySummaryPage() {
   const user = useAuthStore((s) => s.user);
 
   const [data, setData] = useState<WeeklyAnalysis | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [insightSource, setInsightSource] = useState<'ai' | 'rules' | null>(null);
@@ -60,8 +61,9 @@ export default function WeeklySummaryPage() {
     setLoading(true);
     setInsightSource(null);
     try {
-      const a = await getWeeklyAnalysis(week);
-      setData(a);
+      const { analysis, coverImageUrl } = await getWeeklyAnalysis(week);
+      setData(analysis);
+      setCoverImageUrl(coverImageUrl);
     } catch (e) {
       toast.error(extractErrorMessage(e, '加载失败'));
     } finally {
@@ -77,6 +79,7 @@ export default function WeeklySummaryPage() {
       const result = await generateWeekly(week);
       setData(result.analysis);
       setInsightSource(result.insightSource);
+      if (result.coverImageUrl) setCoverImageUrl(result.coverImageUrl);
       toast.success(
         result.insightSource === 'ai' ? 'AI 周总结已生成' : '周总结已生成（规则）'
       );
@@ -130,6 +133,19 @@ export default function WeeklySummaryPage() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Cover image (only when generated) */}
+        {coverImageUrl && (
+          <div className="overflow-hidden rounded-2xl border shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={coverImageUrl}
+              alt="本周封面"
+              className="aspect-[16/9] w-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        )}
 
         {/* Totals */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
