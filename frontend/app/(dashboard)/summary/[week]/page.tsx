@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { addDays, format, parseISO } from 'date-fns';
@@ -56,6 +56,7 @@ export default function WeeklySummaryPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [insightSource, setInsightSource] = useState<'ai' | 'rules' | null>(null);
+  const topRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,16 +76,21 @@ export default function WeeklySummaryPage() {
 
   const handleGenerate = async () => {
     setGenerating(true);
+    const toastId = toast.loading('正在生成周总结与封面图…');
     try {
       const result = await generateWeekly(week);
       setData(result.analysis);
       setInsightSource(result.insightSource);
       if (result.coverImageUrl) setCoverImageUrl(result.coverImageUrl);
       toast.success(
-        result.insightSource === 'ai' ? 'AI 周总结已生成' : '周总结已生成（规则）'
+        result.insightSource === 'ai' ? 'AI 周总结已生成' : '周总结已生成（规则）',
+        { id: toastId }
       );
+      // Scroll back to the top so the user sees the fresh cover + insights,
+      // instead of being stranded at the generate button down the page.
+      topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) {
-      toast.error(extractErrorMessage(e, '生成失败'));
+      toast.error(extractErrorMessage(e, '生成失败'), { id: toastId });
     } finally {
       setGenerating(false);
     }
@@ -110,7 +116,7 @@ export default function WeeklySummaryPage() {
 
   return (
     <main className="px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div ref={topRef} className="mx-auto max-w-4xl space-y-6 scroll-mt-20">
         {/* Header */}
         <div className="flex items-center justify-between gap-2 rounded-2xl border bg-card p-3 shadow-sm">
           <Button variant="ghost" size="icon" onClick={() => gotoWeek(-1)} aria-label="上一周">
@@ -136,7 +142,7 @@ export default function WeeklySummaryPage() {
 
         {/* Cover image (only when generated) */}
         {coverImageUrl && (
-          <div className="overflow-hidden rounded-2xl border shadow-sm">
+          <div className="animate-rise overflow-hidden rounded-2xl border shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={resolveAssetUrl(coverImageUrl)}
