@@ -246,7 +246,7 @@ export async function computeWeeklySummary(userId: string, weekStartStr: string)
 interface SavedExtras {
   coverImageUrl: string | null;
   insightSource: 'ai' | 'rules' | null;
-  referencedBooks: Array<{ title: string; author: string }>;
+  referencedBooks: unknown[];
 }
 
 /** Cover image + insight source + referenced books from a previous `generate`. */
@@ -258,7 +258,7 @@ export async function getSavedExtras(userId: string, weekStartStr: string): Prom
   });
   const ai = (row?.aiRecommendations ?? {}) as {
     source?: 'ai' | 'rules';
-    referencedBooks?: Array<{ title: string; author: string }>;
+    referencedBooks?: unknown[];
   };
   return {
     coverImageUrl: row?.coverImageUrl ?? null,
@@ -290,12 +290,15 @@ export async function generateAndPersistWeeklySummary(userId: string, weekStartS
   // and a source flag, so the frontend can show "AI 生成" vs "规则生成".
   analysis.recommendations = outcome.recommendations;
 
-  const aiRecommendations = {
-    items: outcome.recommendations,
-    source: outcome.source,
-    provider: outcome.provider ?? null,
-    referencedBooks: outcome.referencedBooks,
-  };
+  // Plain JSON for Prisma's Json column (strips interface index-signature issues).
+  const aiRecommendations = JSON.parse(
+    JSON.stringify({
+      items: outcome.recommendations,
+      source: outcome.source,
+      provider: outcome.provider ?? null,
+      referencedBooks: outcome.referencedBooks,
+    })
+  );
 
   const persisted = await prisma.weeklySummary.upsert({
     where: { userId_weekStart: { userId, weekStart } },

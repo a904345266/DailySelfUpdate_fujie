@@ -4,7 +4,12 @@ import type { WeeklyAnalysisResult } from '../analysisService';
 import { OpenAiCompatibleProvider } from './openaiProvider';
 import { ClaudeProvider } from './claudeProvider';
 import { AiProvider, ProviderName } from './types';
-import { INSIGHT_SYSTEM_PROMPT, buildInsightUserPrompt, getReferencedBooks } from './prompt';
+import {
+  INSIGHT_SYSTEM_PROMPT,
+  buildInsightUserPrompt,
+  getReferencedBooks,
+  type ReferencedBook,
+} from './prompt';
 
 export type UserTier = 'free' | 'vip';
 export type InsightSource = 'ai' | 'rules';
@@ -24,7 +29,7 @@ export interface InsightOutcome {
   source: InsightSource;
   provider?: ProviderName;
   /** Books whose theories informed the AI insights (empty for rule fallback). */
-  referencedBooks: Array<{ title: string; author: string }>;
+  referencedBooks: ReferencedBook[];
 }
 
 /**

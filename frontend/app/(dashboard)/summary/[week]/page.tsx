@@ -12,10 +12,12 @@ import {
   getWeeklyAnalysis,
   generateWeekly,
   type WeeklyAnalysis,
+  type ReferencedBook,
 } from '@/lib/analysisApi';
 import { extractErrorMessage, resolveAssetUrl } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { BarByKey, DailyRatingChart, PieByKey } from '@/components/analysis/Charts';
+import { ConceptReader } from '@/components/books/ConceptReader';
 
 // Translation helpers (frontend mirrors backend enum labels)
 const WORK_CATEGORY: Record<string, string> = {
@@ -53,10 +55,11 @@ export default function WeeklySummaryPage() {
 
   const [data, setData] = useState<WeeklyAnalysis | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
-  const [referencedBooks, setReferencedBooks] = useState<{ title: string; author: string }[]>([]);
+  const [referencedBooks, setReferencedBooks] = useState<ReferencedBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [insightSource, setInsightSource] = useState<'ai' | 'rules' | null>(null);
+  const [reader, setReader] = useState<{ bookId: string; conceptId: string } | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -213,17 +216,26 @@ export default function WeeklySummaryPage() {
                 ))}
               </ul>
               {referencedBooks.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
-                  <BookOpen className="h-3.5 w-3.5" />
-                  <span>本周智慧来自：</span>
-                  {referencedBooks.map((b) => (
-                    <span
-                      key={b.title}
-                      className="rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-700 dark:text-amber-300"
-                    >
-                      {b.title}
-                    </span>
-                  ))}
+                <div className="mt-4 border-t pt-3">
+                  <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    <span>本周智慧来自（点击深读）：</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {referencedBooks.flatMap((b) =>
+                      b.concepts.map((c) => (
+                        <button
+                          key={`${b.bookId}-${c.id}`}
+                          type="button"
+                          onClick={() => setReader({ bookId: b.bookId, conceptId: c.id })}
+                          className="rounded-full bg-amber-500/10 px-3 py-1 text-xs text-amber-700 transition-colors hover:bg-amber-500/20 dark:text-amber-300"
+                          title={`${b.title} · ${c.name}`}
+                        >
+                          {b.title}「{c.name}」
+                        </button>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -361,6 +373,14 @@ export default function WeeklySummaryPage() {
           </Button>
         </div>
       </div>
+
+      {reader && (
+        <ConceptReader
+          bookId={reader.bookId}
+          conceptId={reader.conceptId}
+          onClose={() => setReader(null)}
+        />
+      )}
     </main>
   );
 }

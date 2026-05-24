@@ -65,16 +65,27 @@ export function buildInsightUserPrompt(a: WeeklyAnalysisResult): string {
   return `这是用户本周的数据统计，请生成洞察与建议：\n\n${lines.join('\n')}${theoryBlock}`;
 }
 
-/** Books whose theories were injected for this week — for UI attribution. */
-export function getReferencedBooks(a: WeeklyAnalysisResult): Array<{ title: string; author: string }> {
+export interface ReferencedBook {
+  bookId: string;
+  title: string;
+  author: string;
+  concepts: Array<{ id: string; name: string; chapter?: string }>;
+}
+
+/**
+ * Books + the specific concepts used this week — for UI attribution and to let
+ * the frontend deep-link into each concept's chapter reading.
+ */
+export function getReferencedBooks(a: WeeklyAnalysisResult): ReferencedBook[] {
   const theories: SelectedTheory[] = selectRelevantTheories(a);
-  const seen = new Set<string>();
-  const books: Array<{ title: string; author: string }> = [];
+  const byBook = new Map<string, ReferencedBook>();
   for (const t of theories) {
-    if (!seen.has(t.bookTitle)) {
-      seen.add(t.bookTitle);
-      books.push({ title: t.bookTitle, author: t.author });
+    let entry = byBook.get(t.bookId);
+    if (!entry) {
+      entry = { bookId: t.bookId, title: t.bookTitle, author: t.author, concepts: [] };
+      byBook.set(t.bookId, entry);
     }
+    entry.concepts.push({ id: t.concept.id, name: t.concept.name, chapter: t.concept.chapter });
   }
-  return books;
+  return Array.from(byBook.values());
 }

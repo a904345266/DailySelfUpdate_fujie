@@ -50,9 +50,17 @@ export interface TrendPoint {
   avgRating: number | null;
 }
 
+export interface ReferencedConcept {
+  id: string;
+  name: string;
+  chapter?: string | null;
+}
+
 export interface ReferencedBook {
+  bookId: string;
   title: string;
   author: string;
+  concepts: ReferencedConcept[];
 }
 
 export interface WeeklyAnalysisWithCover {

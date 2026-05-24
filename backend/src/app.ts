@@ -11,6 +11,7 @@ import historyRoutes from './routes/historyRoutes';
 import dataRoutes from './routes/dataRoutes';
 import analysisRoutes from './routes/analysisRoutes';
 import vipRoutes from './routes/vipRoutes';
+import booksRoutes from './routes/booksRoutes';
 
 export function createApp() {
   const app = express();
@@ -66,6 +67,7 @@ export function createApp() {
   app.use('/api/data', dataRoutes);
   app.use('/api/analysis', analysisRoutes);
   app.use('/api/vip', vipRoutes);
+  app.use('/api/books', booksRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
