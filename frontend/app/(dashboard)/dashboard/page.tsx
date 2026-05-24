@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { Mic, Calendar, Heart, Users, Sparkles, BarChart3, TrendingUp, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
 import { getDailyRecords, type DailyRecords } from '@/lib/recordsApi';
+import { DailyQuoteCard } from '@/components/DailyQuoteCard';
 
 function thisMonday(): string {
   const d = new Date();
@@ -24,10 +25,6 @@ export default function DashboardPage() {
   useEffect(() => {
     getDailyRecords(today).then(setData).catch(() => { /* silent */ });
   }, [today]);
-
-  const reflection = data?.reflection;
-  const reflectionFilled =
-    !!reflection?.morningGoal || !!reflection?.noonCheck || !!reflection?.eveningReflection;
 
   const cards = [
     { icon: Calendar, label: '工作', count: data?.work.length ?? 0, total: 3, tint: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
@@ -124,22 +121,10 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Reflection */}
-      <Card className="animate-rise" style={{ animationDelay: '240ms' }}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="h-5 w-5 text-amber-500" /> 今日三省
-          </CardTitle>
-          <CardDescription>
-            {reflectionFilled ? '已开始记录，继续完善吧' : '还没有开始 — 早晨设个目标，晚上回顾一下'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href={`/record/${today}`}>{reflectionFilled ? '继续填写' : '开始三省'}</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Daily book quote */}
+      <div className="animate-rise" style={{ animationDelay: '240ms' }}>
+        <DailyQuoteCard />
+      </div>
     </main>
   );
 }
