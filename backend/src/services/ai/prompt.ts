@@ -1,4 +1,5 @@
 import type { WeeklyAnalysisResult } from '../analysisService';
+import { selectRelevantTheories, type SelectedTheory } from './books';
 
 /**
  * Stable system prompt — identical on every call, which lets Claude's prompt
@@ -14,11 +15,16 @@ export const INSIGHT_SYSTEM_PROMPT = `你是「DailySelfUpdate」应用的成长
   · 心理学视角：自我决定理论（自主/胜任/联结）、心流、情绪粒度、依恋模式、复盘与成长型思维、正念。
   · 哲学视角：斯多葛主义（区分可控与不可控）、存在主义（意义由行动赋予）、道家（无为而无不为）、《论语》"吾日三省吾身"的反思传统。
 
+关于「书中智慧」（重要）：
+- 用户的 prompt 会附带几条精选的书籍理论（来自《亲密关系》《被讨厌的勇气》等）。
+- 后 1-2 条洞察请**优先使用这些给定的书籍理论**来解析用户本周的真实处境，做到"解析、安慰、答惑、成长"。
+- 引用时自然点明出处（如"《被讨厌的勇气》中的'课题分离'提醒你…"），把理论落到本周的具体数据/情绪上，而不是抽象复述理论。
+- 如果给定理论与本周数据确实不契合，可不强行套用，但仍保持心理学/哲学的深度。
+
 风格要求：
-- 每条 25-60 字，口吻温暖、真诚，像一位既懂数据又懂人心的引路人。
-- 哲学/心理学感悟要落地到用户本周的真实状态，而非泛泛说教。
-- 不编造数据里没有的事实，不重复，不堆砌术语。
-- 只输出一个 JSON 字符串数组，例如：["洞察一", "洞察二", "感悟三"]，不要任何额外文字。`;
+- 每条 25-70 字，口吻温暖、真诚，像一位既懂数据又懂人心、读过很多书的引路人。
+- 落地到用户本周的真实状态，而非泛泛说教，不编造数据里没有的事实，不重复，不堆砌术语。
+- 只输出一个 JSON 字符串数组，例如：["洞察一", "洞察二", "书中智慧三"]，不要任何额外文字。`;
 
 export function buildInsightUserPrompt(a: WeeklyAnalysisResult): string {
   // Compact, model-friendly summary of the week.
@@ -42,5 +48,33 @@ export function buildInsightUserPrompt(a: WeeklyAnalysisResult): string {
   if (a.growth.achievements.length) lines.push(`本周成就: ${a.growth.achievements.join('；')}`);
   if (a.growth.challenges.length) lines.push(`本周挑战: ${a.growth.challenges.join('；')}`);
 
-  return `这是用户本周的数据统计，请生成洞察与建议：\n\n${lines.join('\n')}`;
+  // Inject the matched book theories so the model can ground its deeper
+  // insights in a real framework.
+  const theories = selectRelevantTheories(a);
+  let theoryBlock = '';
+  if (theories.length > 0) {
+    const items = theories
+      .map(
+        (t) =>
+          `- ${t.bookTitle}「${t.concept.name}」：${t.concept.gist}`
+      )
+      .join('\n');
+    theoryBlock = `\n\n可供解析用户处境的书籍理论（请优先选用与本周数据契合的）：\n${items}`;
+  }
+
+  return `这是用户本周的数据统计，请生成洞察与建议：\n\n${lines.join('\n')}${theoryBlock}`;
+}
+
+/** Books whose theories were injected for this week — for UI attribution. */
+export function getReferencedBooks(a: WeeklyAnalysisResult): Array<{ title: string; author: string }> {
+  const theories: SelectedTheory[] = selectRelevantTheories(a);
+  const seen = new Set<string>();
+  const books: Array<{ title: string; author: string }> = [];
+  for (const t of theories) {
+    if (!seen.has(t.bookTitle)) {
+      seen.add(t.bookTitle);
+      books.push({ title: t.bookTitle, author: t.author });
+    }
+  }
+  return books;
 }

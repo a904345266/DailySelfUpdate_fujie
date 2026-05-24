@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { addDays, format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -53,6 +53,7 @@ export default function WeeklySummaryPage() {
 
   const [data, setData] = useState<WeeklyAnalysis | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [referencedBooks, setReferencedBooks] = useState<{ title: string; author: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [insightSource, setInsightSource] = useState<'ai' | 'rules' | null>(null);
@@ -62,9 +63,12 @@ export default function WeeklySummaryPage() {
     setLoading(true);
     setInsightSource(null);
     try {
-      const { analysis, coverImageUrl } = await getWeeklyAnalysis(week);
+      const { analysis, coverImageUrl, insightSource, referencedBooks } =
+        await getWeeklyAnalysis(week);
       setData(analysis);
       setCoverImageUrl(coverImageUrl);
+      setInsightSource(insightSource);
+      setReferencedBooks(referencedBooks);
     } catch (e) {
       toast.error(extractErrorMessage(e, '加载失败'));
     } finally {
@@ -81,6 +85,7 @@ export default function WeeklySummaryPage() {
       const result = await generateWeekly(week);
       setData(result.analysis);
       setInsightSource(result.insightSource);
+      setReferencedBooks(result.referencedBooks);
       if (result.coverImageUrl) setCoverImageUrl(result.coverImageUrl);
       toast.success(
         result.insightSource === 'ai' ? 'AI 周总结已生成' : '周总结已生成（规则）',
@@ -207,6 +212,20 @@ export default function WeeklySummaryPage() {
                   </li>
                 ))}
               </ul>
+              {referencedBooks.length > 0 && (
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  <span>本周智慧来自：</span>
+                  {referencedBooks.map((b) => (
+                    <span
+                      key={b.title}
+                      className="rounded-full bg-amber-500/10 px-2 py-0.5 text-amber-700 dark:text-amber-300"
+                    >
+                      {b.title}
+                    </span>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

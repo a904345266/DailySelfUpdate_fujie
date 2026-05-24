@@ -50,14 +50,26 @@ export interface TrendPoint {
   avgRating: number | null;
 }
 
+export interface ReferencedBook {
+  title: string;
+  author: string;
+}
+
 export interface WeeklyAnalysisWithCover {
   analysis: WeeklyAnalysis;
   coverImageUrl: string | null;
+  insightSource: 'ai' | 'rules' | null;
+  referencedBooks: ReferencedBook[];
 }
 
 export async function getWeeklyAnalysis(weekStart: string): Promise<WeeklyAnalysisWithCover> {
   const res = await api.get(`/analysis/weekly/${weekStart}`);
-  return { analysis: res.data.analysis, coverImageUrl: res.data.coverImageUrl ?? null };
+  return {
+    analysis: res.data.analysis,
+    coverImageUrl: res.data.coverImageUrl ?? null,
+    insightSource: res.data.insightSource ?? null,
+    referencedBooks: res.data.referencedBooks ?? [],
+  };
 }
 
 export type InsightSource = 'ai' | 'rules';
@@ -67,6 +79,7 @@ export interface GenerateResult {
   insightSource: InsightSource;
   provider?: string | null;
   coverImageUrl: string | null;
+  referencedBooks: ReferencedBook[];
 }
 
 export async function generateWeekly(weekStart: string): Promise<GenerateResult> {
@@ -76,6 +89,7 @@ export async function generateWeekly(weekStart: string): Promise<GenerateResult>
     insightSource: res.data.insightSource ?? 'rules',
     provider: res.data.provider ?? null,
     coverImageUrl: res.data.coverImageUrl ?? null,
+    referencedBooks: res.data.referencedBooks ?? [],
   };
 }
 

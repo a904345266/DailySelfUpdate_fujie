@@ -243,14 +243,28 @@ export async function computeWeeklySummary(userId: string, weekStartStr: string)
   return buildAnalysis(weekStart, weekEnd, data);
 }
 
-/** The cover image saved from a previous `generate` call, if any. */
-export async function getSavedCoverImage(userId: string, weekStartStr: string): Promise<string | null> {
+interface SavedExtras {
+  coverImageUrl: string | null;
+  insightSource: 'ai' | 'rules' | null;
+  referencedBooks: Array<{ title: string; author: string }>;
+}
+
+/** Cover image + insight source + referenced books from a previous `generate`. */
+export async function getSavedExtras(userId: string, weekStartStr: string): Promise<SavedExtras> {
   const { weekStart } = weekBoundsFromAny(weekStartStr);
   const row = await prisma.weeklySummary.findUnique({
     where: { userId_weekStart: { userId, weekStart } },
-    select: { coverImageUrl: true },
+    select: { coverImageUrl: true, aiRecommendations: true },
   });
-  return row?.coverImageUrl ?? null;
+  const ai = (row?.aiRecommendations ?? {}) as {
+    source?: 'ai' | 'rules';
+    referencedBooks?: Array<{ title: string; author: string }>;
+  };
+  return {
+    coverImageUrl: row?.coverImageUrl ?? null,
+    insightSource: ai.source ?? null,
+    referencedBooks: Array.isArray(ai.referencedBooks) ? ai.referencedBooks : [],
+  };
 }
 
 export async function generateAndPersistWeeklySummary(userId: string, weekStartStr: string) {
@@ -280,6 +294,7 @@ export async function generateAndPersistWeeklySummary(userId: string, weekStartS
     items: outcome.recommendations,
     source: outcome.source,
     provider: outcome.provider ?? null,
+    referencedBooks: outcome.referencedBooks,
   };
 
   const persisted = await prisma.weeklySummary.upsert({
@@ -316,6 +331,7 @@ export async function generateAndPersistWeeklySummary(userId: string, weekStartS
     insightSource: outcome.source,
     provider: outcome.provider,
     coverImageUrl: persisted.coverImageUrl,
+    referencedBooks: outcome.referencedBooks,
   };
 }
 

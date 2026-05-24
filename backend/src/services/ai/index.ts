@@ -4,7 +4,7 @@ import type { WeeklyAnalysisResult } from '../analysisService';
 import { OpenAiCompatibleProvider } from './openaiProvider';
 import { ClaudeProvider } from './claudeProvider';
 import { AiProvider, ProviderName } from './types';
-import { INSIGHT_SYSTEM_PROMPT, buildInsightUserPrompt } from './prompt';
+import { INSIGHT_SYSTEM_PROMPT, buildInsightUserPrompt, getReferencedBooks } from './prompt';
 
 export type UserTier = 'free' | 'vip';
 export type InsightSource = 'ai' | 'rules';
@@ -23,6 +23,8 @@ export interface InsightOutcome {
   recommendations: string[];
   source: InsightSource;
   provider?: ProviderName;
+  /** Books whose theories informed the AI insights (empty for rule fallback). */
+  referencedBooks: Array<{ title: string; author: string }>;
 }
 
 /**
@@ -37,6 +39,7 @@ export async function generateInsights(
   const ruleFallback: InsightOutcome = {
     recommendations: analysis.recommendations,
     source: 'rules',
+    referencedBooks: [],
   };
 
   if (!env.AI_ENABLED) return ruleFallback;
@@ -55,7 +58,12 @@ export async function generateInsights(
       controller.signal
     );
     if (recommendations.length === 0) return ruleFallback;
-    return { recommendations, source: 'ai', provider: provider.name };
+    return {
+      recommendations,
+      source: 'ai',
+      provider: provider.name,
+      referencedBooks: getReferencedBooks(analysis),
+    };
   } catch (err) {
     logger.warn(
       `AI insight generation failed (provider=${provider.name}), falling back to rules: ${
