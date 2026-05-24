@@ -1,7 +1,35 @@
+import fs from 'fs/promises';
+import path from 'path';
+import crypto from 'crypto';
 import OpenAI from 'openai';
 import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
 import type { WeeklyAnalysisResult } from '../analysisService';
+
+// Covers are written here and served at the matching public URL (see app.ts).
+// Path is under /api/uploads so it rides the frontend's API base / Caddy proxy.
+const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads', 'covers');
+const PUBLIC_PREFIX = '/api/uploads/covers';
+
+/**
+ * Download a remote image to local disk and return its public path
+ * (e.g. /uploads/covers/ab12.png). Returns null on failure.
+ */
+async function downloadToLocal(remoteUrl: string): Promise<string | null> {
+  try {
+    const res = await fetch(remoteUrl);
+    if (!res.ok) throw new Error(`download HTTP ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    const ext = remoteUrl.includes('.jpg') || remoteUrl.includes('.jpeg') ? 'jpg' : 'png';
+    const name = `${crypto.randomBytes(12).toString('hex')}.${ext}`;
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+    await fs.writeFile(path.join(UPLOAD_DIR, name), buf);
+    return `${PUBLIC_PREFIX}/${name}`;
+  } catch (err) {
+    logger.warn(`Cover image download failed: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
+}
 
 /**
  * Build a text-to-image prompt describing a calm, mood-matched cover for the
@@ -70,8 +98,13 @@ export async function generateCoverImage(a: WeeklyAnalysisResult): Promise<Cover
       },
       { signal: controller.signal }
     );
-    const url = res.data?.[0]?.url ?? null;
-    return { url };
+    const remoteUrl = res.data?.[0]?.url ?? null;
+    if (!remoteUrl) return { url: null };
+
+    // The provider's URL expires (智谱 ~7d). Download it now and serve a stable
+    // local copy so covers never break.
+    const localPath = await downloadToLocal(remoteUrl);
+    return { url: localPath ?? remoteUrl }; // fall back to remote URL if download fails
   } catch (err) {
     logger.warn(
       `Cover image generation failed (model=${env.IMAGE_MODEL}): ${

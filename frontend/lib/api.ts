@@ -78,6 +78,18 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Resolve a backend-relative asset path (e.g. /api/uploads/covers/x.png) into
+ * a URL the browser can load. Paths already start with /api, and BASE_URL ends
+ * with /api, so we strip the duplicate prefix and join against the API origin.
+ * Works in both direct mode (http://IP:3001/api) and proxied mode (/api).
+ */
+export function resolveAssetUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl; // already absolute
+  const base = BASE_URL.replace(/\/api\/?$/, ''); // drop trailing /api → origin (or '')
+  return `${base}${pathOrUrl}`;
+}
+
 export interface ApiErrorBody {
   success: false;
   error: { code: string; message: string; details?: unknown };

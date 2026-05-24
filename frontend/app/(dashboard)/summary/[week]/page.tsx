@@ -13,7 +13,7 @@ import {
   generateWeekly,
   type WeeklyAnalysis,
 } from '@/lib/analysisApi';
-import { extractErrorMessage } from '@/lib/api';
+import { extractErrorMessage, resolveAssetUrl } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { BarByKey, DailyRatingChart, PieByKey } from '@/components/analysis/Charts';
 
@@ -139,7 +139,7 @@ export default function WeeklySummaryPage() {
           <div className="overflow-hidden rounded-2xl border shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={coverImageUrl}
+              src={resolveAssetUrl(coverImageUrl)}
               alt="本周封面"
               className="aspect-[16/9] w-full object-cover"
               loading="lazy"

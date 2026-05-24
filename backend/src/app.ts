@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -53,6 +54,11 @@ export function createApp() {
   app.get('/api/health', (_req, res) => {
     res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
   });
+
+  // Serve generated cover images (downloaded locally so they never expire).
+  // Mounted under /api/uploads so it rides the same proxy/base-url the frontend
+  // already uses (Caddy routes /api/* → backend; direct mode points at :3001/api).
+  app.use('/api/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
   app.use('/api/auth', authRoutes);
   app.use('/api/records', recordsRoutes);
