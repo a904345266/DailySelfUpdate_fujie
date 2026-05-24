@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,6 +34,7 @@ export default function RecordPage() {
   const [data, setData] = useState<DailyRecords | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'work' | 'friend' | 'partner' | 'gratitude' | 'reflection'>('work');
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -99,21 +100,33 @@ export default function RecordPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">
-            {/* 日期文字叠一个原生 date input：点击可直接选年月日 */}
-            <label className="relative inline-flex cursor-pointer items-center gap-1">
+            {/* 点击日期主动调起原生日期选择器，可直接选年月日 */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = dateInputRef.current;
+                if (!el) return;
+                // 现代浏览器：主动弹出日历；不支持则聚焦兜底
+                if (typeof el.showPicker === 'function') el.showPicker();
+                else el.focus();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-accent"
+            >
               <CalendarDays className="h-4 w-4 text-muted-foreground" />
               <h1 className="text-lg font-semibold">{displayDate}</h1>
-              <input
-                type="date"
-                value={date}
-                max={TODAY()}
-                onChange={(e) => {
-                  if (e.target.value) router.push(`/record/${e.target.value}`);
-                }}
-                className="absolute inset-0 cursor-pointer opacity-0"
-                aria-label="选择日期"
-              />
-            </label>
+            </button>
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={date}
+              max={TODAY()}
+              onChange={(e) => {
+                if (e.target.value) router.push(`/record/${e.target.value}`);
+              }}
+              className="sr-only"
+              aria-label="选择日期"
+              tabIndex={-1}
+            />
             {isToday ? (
               <p className="text-xs text-muted-foreground">今天</p>
             ) : (
