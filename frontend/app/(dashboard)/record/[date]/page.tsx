@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDays, format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -99,7 +99,21 @@ export default function RecordPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="text-center">
-            <h1 className="text-lg font-semibold">{displayDate}</h1>
+            {/* 日期文字叠一个原生 date input：点击可直接选年月日 */}
+            <label className="relative inline-flex cursor-pointer items-center gap-1">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <h1 className="text-lg font-semibold">{displayDate}</h1>
+              <input
+                type="date"
+                value={date}
+                max={TODAY()}
+                onChange={(e) => {
+                  if (e.target.value) router.push(`/record/${e.target.value}`);
+                }}
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label="选择日期"
+              />
+            </label>
             {isToday ? (
               <p className="text-xs text-muted-foreground">今天</p>
             ) : (
