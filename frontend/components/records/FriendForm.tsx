@@ -9,6 +9,7 @@ import { NativeSelect } from '@/components/ui/select-native';
 import { StarRating } from '@/components/ui/star-rating';
 import { VoiceInput } from '@/components/voice/VoiceInput';
 import { createFriend, type FriendInteraction } from '@/lib/recordsApi';
+import { FRIEND_EMOTIONS } from '@/lib/emotions';
 import { extractErrorMessage } from '@/lib/api';
 
 interface Props {
@@ -93,12 +94,15 @@ export function FriendForm({ date, onCreated }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="friend-emotion">情绪</Label>
-          <Input
+          <NativeSelect
             id="friend-emotion"
-            placeholder="例如：开心 / 感动 / 担心"
             value={emotion}
             onChange={(e) => setEmotion(e.target.value)}
-          />
+          >
+            {FRIEND_EMOTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </NativeSelect>
         </div>
         <div className="space-y-2">
           <Label>重要性</Label>

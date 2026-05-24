@@ -21,6 +21,7 @@ import {
   deleteGratitude,
   type DailyRecords,
 } from '@/lib/recordsApi';
+import { emotionLabel } from '@/lib/emotions';
 import { extractErrorMessage } from '@/lib/api';
 
 const TODAY = () => format(new Date(), 'yyyy-MM-dd');
@@ -156,7 +157,7 @@ export default function RecordPage() {
                   <RecordItem
                     key={r.id}
                     title={r.friendName}
-                    meta={<span className="text-xs text-muted-foreground">{FRIEND_INTERACTION_LABELS[r.interactionType]} · {r.emotion}</span>}
+                    meta={<span className="text-xs text-muted-foreground">{FRIEND_INTERACTION_LABELS[r.interactionType]} · {emotionLabel(r.emotion)}</span>}
                     content={r.content}
                     importance={r.importance}
                     onDelete={() => removeFriend(r.id)}
@@ -177,7 +178,7 @@ export default function RecordPage() {
                     title={r.partnerName}
                     meta={
                       <span className="text-xs text-muted-foreground">
-                        {PARTNER_INTERACTION_LABELS[r.interactionType]} · {r.emotion}
+                        {PARTNER_INTERACTION_LABELS[r.interactionType]} · {emotionLabel(r.emotion)}
                         {r.interactionType === 'argument' && (
                           <span className={r.resolved ? 'ml-2 text-green-600' : 'ml-2 text-orange-600'}>
                             {r.resolved ? '✓ 已解决' : '待解决'}

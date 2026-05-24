@@ -39,7 +39,7 @@ export class OpenAiCompatibleProvider implements AiProvider {
           { role: 'user', content: req.user },
         ],
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: 900,
       },
       { signal }
     );

@@ -25,7 +25,7 @@ export class ClaudeProvider implements AiProvider {
     const res = await client.messages.create(
       {
         model: env.CLAUDE_MODEL,
-        max_tokens: 600,
+        max_tokens: 900,
         // The system prompt is stable across calls → cache it to cut cost ~10x
         // on the largest, most-repeated part of the input.
         system: [

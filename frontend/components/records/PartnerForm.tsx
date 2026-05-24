@@ -10,6 +10,7 @@ import { NativeSelect } from '@/components/ui/select-native';
 import { StarRating } from '@/components/ui/star-rating';
 import { VoiceInput } from '@/components/voice/VoiceInput';
 import { createPartner, type PartnerInteraction } from '@/lib/recordsApi';
+import { PARTNER_EMOTIONS } from '@/lib/emotions';
 import { extractErrorMessage } from '@/lib/api';
 
 interface Props {
@@ -96,11 +97,15 @@ export function PartnerForm({ date, onCreated }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="partner-emotion">情绪</Label>
-          <Input
+          <NativeSelect
             id="partner-emotion"
             value={emotion}
             onChange={(e) => setEmotion(e.target.value)}
-          />
+          >
+            {PARTNER_EMOTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </NativeSelect>
         </div>
         <div className="space-y-2">
           <Label>重要性</Label>
