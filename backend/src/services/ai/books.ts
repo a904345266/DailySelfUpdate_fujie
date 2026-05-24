@@ -25,6 +25,8 @@ export interface BookTheory {
   id: string;
   title: string;
   author: string;
+  authorBio?: string; // 作者简介
+  intro?: string; // 书籍简介
   /** Themes this book is strong on, used for matching against weekly data. */
   themes: Array<'work' | 'friend' | 'partner' | 'gratitude' | 'self' | 'emotion'>;
   concepts: Concept[];
@@ -35,6 +37,10 @@ export const BOOKS: BookTheory[] = [
     id: 'intimacy',
     title: '《亲密关系》',
     author: '克里斯多福·孟',
+    authorBio:
+      '克里斯多福·孟（Christopher Moon），加拿大籍身心灵导师、演说家，长期带领关于亲密关系与个人成长的工作坊。他融合心理学与灵性视角，擅长用通俗的语言揭示亲密关系背后的心理机制。',
+    intro:
+      '《亲密关系》是一本探讨两性与人际关系本质的经典之作。作者提出，亲密关系会经历"月晕、幻灭、内省、启示"四个阶段，而伴侣其实是一面镜子——关系中的冲突与失望，照见的是我们自己尚未疗愈的部分。本书帮助读者跳出"寻找爱"的索取，走向"成为爱"的成熟，把每一段关系都变成认识与疗愈自己的旅程。',
     themes: ['partner', 'friend', 'emotion', 'self'],
     concepts: [
       {
@@ -145,6 +151,10 @@ export const BOOKS: BookTheory[] = [
     id: 'courage',
     title: '《被讨厌的勇气》',
     author: '岸见一郎（阿德勒心理学）',
+    authorBio:
+      '岸见一郎，日本哲学家、阿德勒心理学研究者，与作家古贺史健合著本书。他长期钻研阿德勒（Alfred Adler）的个体心理学，致力于把阿德勒思想以通俗、实践化的方式带给大众。',
+    intro:
+      '《被讨厌的勇气》以一位青年与哲人对话的形式，系统讲解阿德勒心理学。核心观点包括：决定我们的不是过去而是当下赋予的"目的"（目的论）；一切烦恼都源于人际关系；通过"课题分离"把自己与他人的责任分开；以及在"共同体感觉"与"贡献感"中获得幸福。它告诉我们：自由，就是拥有不怕被别人讨厌的勇气，接纳平凡而真实的自己，认真活在此时此刻。',
     themes: ['self', 'work', 'friend', 'emotion'],
     concepts: [
       {
@@ -269,6 +279,15 @@ export interface SelectedTheory {
   bookTitle: string;
   author: string;
   concept: Concept;
+}
+
+/** Look up a book by id (for intro popup). Matches by exact id or by title. */
+export function findBook(idOrTitle: string): BookTheory | null {
+  return (
+    BOOKS.find((b) => b.id === idOrTitle) ??
+    BOOKS.find((b) => b.title === idOrTitle || b.title === `《${idOrTitle}》`) ??
+    null
+  );
 }
 
 /** Look up a concept's full deep-dive content by book + concept id. */

@@ -1,10 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, Mic, MicOff, RotateCcw } from 'lucide-react';
+import { AlertCircle, Mic, MicOff, RotateCcw, Sparkles, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
+import { refineText } from '@/lib/textApi';
+import { extractErrorMessage } from '@/lib/api';
 
 interface VoiceInputProps {
   /** Controlled text value (lets users edit by keyboard too) */
@@ -36,6 +39,38 @@ export function VoiceInput({
   // Snapshot of the textarea content at the moment listening started, so we
   // can append finalized recognition to it without clobbering edits.
   const [baseValue, setBaseValue] = useState<string>(value);
+
+  // AI refine: preview the AI version side-by-side and let the user adopt it.
+  const [refining, setRefining] = useState(false);
+  const [preview, setPreview] = useState<{ text: string; mode: 'basic' | 'polish' } | null>(null);
+
+  const handleRefine = async () => {
+    if (!value.trim()) {
+      toast.error('请先输入或录入一些内容');
+      return;
+    }
+    setRefining(true);
+    try {
+      const res = await refineText(value);
+      if (!res.changed) {
+        toast.info('内容已经很简洁，无需整理');
+        return;
+      }
+      setPreview({ text: res.text, mode: res.mode });
+    } catch (e) {
+      toast.error(extractErrorMessage(e, 'AI 整理失败'));
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  const adoptPreview = () => {
+    if (preview) {
+      onChange(preview.text);
+      setBaseValue(preview.text);
+    }
+    setPreview(null);
+  };
 
   const {
     isListening,
@@ -134,19 +169,63 @@ export function VoiceInput({
         </div>
 
         {value && !isListening && (
-          <button
-            type="button"
-            onClick={() => {
-              onChange('');
-              reset();
-              setBaseValue('');
-            }}
-            className="inline-flex items-center gap-1 text-muted-foreground hover:text-destructive"
-          >
-            <RotateCcw className="h-3 w-3" /> 清空
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleRefine}
+              disabled={refining || disabled}
+              className="inline-flex items-center gap-1 text-violet-600 hover:text-violet-700 disabled:opacity-50 dark:text-violet-400"
+            >
+              <Sparkles className={cn('h-3 w-3', refining && 'animate-spin')} />
+              {refining ? '整理中…' : 'AI 整理'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                reset();
+                setBaseValue('');
+                setPreview(null);
+              }}
+              className="inline-flex items-center gap-1 text-muted-foreground hover:text-destructive"
+            >
+              <RotateCcw className="h-3 w-3" /> 清空
+            </button>
+          </div>
         )}
       </div>
+
+      {/* AI refine preview: original vs AI version, user chooses */}
+      {preview && (
+        <div className="animate-rise space-y-3 rounded-lg border border-violet-300/50 bg-violet-50/50 p-3 dark:border-violet-500/30 dark:bg-violet-500/5">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-violet-700 dark:text-violet-300">
+            <Sparkles className="h-3.5 w-3.5" />
+            {preview.mode === 'polish' ? 'AI 提炼润色（VIP）' : 'AI 精简整理'}
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <div className="mb-1 text-xs text-muted-foreground">原文</div>
+              <div className="whitespace-pre-wrap rounded-md bg-background/60 p-2 text-sm text-muted-foreground">
+                {value}
+              </div>
+            </div>
+            <div>
+              <div className="mb-1 text-xs text-muted-foreground">AI 版本</div>
+              <div className="whitespace-pre-wrap rounded-md bg-background p-2 text-sm text-foreground ring-1 ring-violet-300/50 dark:ring-violet-500/30">
+                {preview.text}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setPreview(null)}>
+              <X className="mr-1 h-3.5 w-3.5" /> 放弃
+            </Button>
+            <Button type="button" size="sm" onClick={adoptPreview}>
+              <Check className="mr-1 h-3.5 w-3.5" /> 采用
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

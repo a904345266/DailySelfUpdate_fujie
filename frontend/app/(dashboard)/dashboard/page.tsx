@@ -27,10 +27,10 @@ export default function DashboardPage() {
   }, [today]);
 
   const cards = [
-    { icon: Calendar, label: '工作', count: data?.work.length ?? 0, total: 3, tint: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-    { icon: Users, label: '朋友', count: data?.friends.length ?? 0, total: 3, tint: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
-    { icon: Heart, label: '伴侣', count: data?.partner.length ?? 0, total: 3, tint: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
-    { icon: Sparkles, label: '感恩', count: data?.gratitude.length ?? 0, total: 3, tint: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+    { icon: Calendar, label: '工作', count: data?.work.length ?? 0, tint: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+    { icon: Users, label: '朋友', count: data?.friends.length ?? 0, tint: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+    { icon: Heart, label: '伴侣', count: data?.partner.length ?? 0, tint: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
+    { icon: Sparkles, label: '感恩', count: data?.gratitude.length ?? 0, tint: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
   ];
 
   const hour = new Date().getHours();
@@ -63,7 +63,7 @@ export default function DashboardPage() {
       <div className="grid animate-rise grid-cols-2 gap-3 sm:grid-cols-4" style={{ animationDelay: '120ms' }}>
         {cards.map((c) => {
           const Icon = c.icon;
-          const done = c.count >= c.total;
+          const done = c.count > 0;
           return (
             <Link key={c.label} href={`/record/${today}`} className="block">
               <Card className="card-hover h-full">
@@ -72,16 +72,20 @@ export default function DashboardPage() {
                     <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${c.tint}`}>
                       <Icon className="h-5 w-5" />
                     </div>
-                    {done && <span className="text-xs font-medium text-emerald-500">✓ 达成</span>}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        done
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {done ? '已完成' : '未完成'}
+                    </span>
                   </div>
                   <p className="mt-3 text-sm font-medium">{c.label}</p>
-                  <p className="text-xs text-muted-foreground">{c.count} / {c.total} 件</p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${Math.min(100, (c.count / c.total) * 100)}%` }}
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {done ? `今日 ${c.count} 条` : '今日暂无'}
+                  </p>
                 </CardContent>
               </Card>
             </Link>

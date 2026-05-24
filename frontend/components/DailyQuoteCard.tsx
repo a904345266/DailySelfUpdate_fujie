@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BookOpen, Quote, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getDailyQuote, type DailyQuote } from '@/lib/quotesApi';
+import { BookIntroDialog } from '@/components/books/BookIntroDialog';
 
 /**
  * Dashboard card: a daily quote from a classic book, personalized to the user's
@@ -12,6 +13,7 @@ import { getDailyQuote, type DailyQuote } from '@/lib/quotesApi';
 export function DailyQuoteCard() {
   const [data, setData] = useState<DailyQuote | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showIntro, setShowIntro] = useState(false);
 
   const load = useCallback(async (refresh: boolean) => {
     setLoading(true);
@@ -62,13 +64,26 @@ export function DailyQuoteCard() {
             </blockquote>
             <figcaption className="mt-3 text-sm text-muted-foreground">
               —— {data.author ? `${data.author} ` : ''}
-              {data.book}
+              {data.book && (
+                <button
+                  type="button"
+                  onClick={() => setShowIntro(true)}
+                  className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+                  title="查看作者与书籍简介"
+                >
+                  {data.book}
+                </button>
+              )}
             </figcaption>
           </figure>
         ) : (
           <p className="text-sm text-muted-foreground">暂时拿不到金句，稍后再试～</p>
         )}
       </CardContent>
+
+      {showIntro && data?.book && (
+        <BookIntroDialog title={data.book} onClose={() => setShowIntro(false)} />
+      )}
     </Card>
   );
 }
