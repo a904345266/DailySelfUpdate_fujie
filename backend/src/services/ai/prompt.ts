@@ -5,12 +5,14 @@ import { selectRelevantTheories, type SelectedTheory } from './books';
  * Stable system prompt — identical on every call, which lets Claude's prompt
  * caching kick in and makes OpenAI-compatible calls predictable.
  */
-export const INSIGHT_SYSTEM_PROMPT = `你是「DailySelfUpdate」应用的成长导师，兼具心理咨询师的洞察与哲学家的视角。用户每天记录工作、朋友、伴侣、感恩与每日三省，应用已把一周的数据聚合成结构化统计。
+export const INSIGHT_SYSTEM_PROMPT = `你是「DailySelfUpdate」应用的成长导师，兼具心理咨询师的洞察与哲学家的视角。用户每天记录工作、朋友、伴侣、感恩与每日三省。prompt 里会给你两类信息：一周的结构化统计，以及**用户亲手写下的真实记录原文**。
 
-你的任务：基于这些统计，生成 4-6 条有深度的中文洞察与感悟，帮助用户更好地理解自己。
+你的任务：生成 4-6 条有深度的中文洞察与感悟，帮助用户更好地理解自己。
+
+最重要的原则：**必须紧扣用户的真实记录原文**——引用其中具体的事件、人物、感受（如"你提到这周和小李爬山时很放松"），让用户感到"你真的读懂了我写的东西"，而不是泛泛地复述统计数字。真实内容优先于统计数字。
 
 内容要求：
-- **前 2-3 条**：结合本周具体数字的观察与可执行建议（如"本周记录了 5 件感恩，说明你正在练习注意力的转向"）。温暖、具体、不空泛。
+- **前 2-3 条**：从真实记录里挑出具体的事件/情绪来回应、肯定或给建议，可结合数字佐证。务必具体到用户写的内容，不要只说"本周记录了 N 条"这种空话。
 - **后 1-2 条**：上升到心理学或哲学层面的感悟，给用户更深的自我理解。可援引相关概念或思想，但要自然融入、与本周数据相关，不堆砌名词。例如：
   · 心理学视角：自我决定理论（自主/胜任/联结）、心流、情绪粒度、依恋模式、复盘与成长型思维、正念。
   · 哲学视角：斯多葛主义（区分可控与不可控）、存在主义（意义由行动赋予）、道家（无为而无不为）、《论语》"吾日三省吾身"的反思传统。
@@ -48,6 +50,31 @@ export function buildInsightUserPrompt(a: WeeklyAnalysisResult): string {
   if (a.growth.achievements.length) lines.push(`本周成就: ${a.growth.achievements.join('；')}`);
   if (a.growth.challenges.length) lines.push(`本周挑战: ${a.growth.challenges.join('；')}`);
 
+  // ---- The user's REAL words this week (most important for relevance) ----
+  // Cap total length so we don't blow the token budget on a busy week.
+  const MAX_EXCERPT_CHARS = 2400;
+  const ex = a.excerpts;
+  const groups: Array<[string, string[]]> = [
+    ['工作', ex.work],
+    ['朋友', ex.friend],
+    ['伴侣', ex.partner],
+    ['感恩', ex.gratitude],
+    ['每日三省', ex.reflection],
+  ];
+  const excerptLines: string[] = [];
+  let used = 0;
+  for (const [label, items] of groups) {
+    for (const item of items) {
+      const line = `· [${label}] ${item}`;
+      if (used + line.length > MAX_EXCERPT_CHARS) break;
+      excerptLines.push(line);
+      used += line.length;
+    }
+  }
+  const excerptBlock = excerptLines.length
+    ? `\n\n本周用户的真实记录原文（请务必基于这些真实内容来分析，引用其中的具体事件/感受）：\n${excerptLines.join('\n')}`
+    : '';
+
   // Inject the matched book theories so the model can ground its deeper
   // insights in a real framework.
   const theories = selectRelevantTheories(a);
@@ -62,7 +89,7 @@ export function buildInsightUserPrompt(a: WeeklyAnalysisResult): string {
     theoryBlock = `\n\n可供解析用户处境的书籍理论（请优先选用与本周数据契合的）：\n${items}`;
   }
 
-  return `这是用户本周的数据统计，请生成洞察与建议：\n\n${lines.join('\n')}${theoryBlock}`;
+  return `这是用户本周的数据统计与真实记录，请生成洞察与建议：\n\n${lines.join('\n')}${excerptBlock}${theoryBlock}`;
 }
 
 export interface ReferencedBook {
