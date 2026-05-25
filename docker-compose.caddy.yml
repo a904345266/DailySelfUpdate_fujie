@@ -16,8 +16,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      # If you use a high port (e.g. :8443) to avoid 备案, also map it:
-      # - "8443:8443"
+      # High port to use HTTPS while ICP 备案 is pending (80/443 may be blocked).
+      # Remove this line once 备案 is approved and you switch back to 443.
+      - "8443:8443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

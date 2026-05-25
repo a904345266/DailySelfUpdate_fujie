@@ -1,23 +1,20 @@
 # Caddy reverse proxy with automatic HTTPS (Let's Encrypt).
 #
-# {$SITE_ADDRESS} comes from the env (set in .env). It may contain MULTIPLE
-# space-separated hostnames, e.g.:
-#   SITE_ADDRESS="dailyselfupdate.online www.dailyselfupdate.online"
-#   SITE_ADDRESS=dailyselfupdate.online:8443   (high port, avoids 备案 on 80/443)
+# {$SITE_ADDRESS} = space-separated site addresses. List the SAME domain on both
+# 443 (implicit) and the high port, so HTTPS works on either. Example:
+#   SITE_ADDRESS="dailyselfupdate.online www.dailyselfupdate.online dailyselfupdate.online:8443 www.dailyselfupdate.online:8443"
 #
-# Path routing on ONE site: /api/* → backend, everything else → frontend.
-# Frontend is built with NEXT_PUBLIC_API_BASE_URL=/api → same-origin, no CORS,
-# one certificate covers all listed hostnames.
+# Why two ports: during ICP 备案 the ISP may block 80/443 → use https://<domain>:8443
+# meanwhile. Once 备案 passes, https://<domain> (443) just works. The cert is
+# obtained once (via port 80 ACME) and reused on the high port too.
+#
+# Path routing: /api/* → backend, everything else → frontend (same-origin).
 
 {$SITE_ADDRESS} {
 	encode gzip
-
-	# Backend API + uploaded assets
 	handle /api/* {
 		reverse_proxy backend:3001
 	}
-
-	# Frontend (Next.js) — everything else
 	handle {
 		reverse_proxy frontend:3000
 	}
