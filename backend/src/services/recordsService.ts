@@ -104,6 +104,7 @@ interface PartnerRecordInput {
   emotion: string;
   importance: number;
   resolved?: boolean;
+  photoUrl?: string;
 }
 
 export async function createPartnerRecord(userId: string, input: PartnerRecordInput) {
@@ -117,6 +118,7 @@ export async function createPartnerRecord(userId: string, input: PartnerRecordIn
       emotion: input.emotion,
       importance: input.importance,
       resolved: input.resolved ?? false,
+      photoUrl: input.photoUrl,
     },
   });
 }

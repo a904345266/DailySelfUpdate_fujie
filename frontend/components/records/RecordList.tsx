@@ -32,9 +32,10 @@ interface RecordItemProps {
   importance?: number;
   onDelete?: () => void;
   children?: React.ReactNode;
+  photoUrl?: string | null;
 }
 
-export function RecordItem({ title, meta, content, importance, onDelete, children }: RecordItemProps) {
+export function RecordItem({ title, meta, content, importance, onDelete, children, photoUrl }: RecordItemProps) {
   return (
     <div className="rounded-lg border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -47,6 +48,15 @@ export function RecordItem({ title, meta, content, importance, onDelete, childre
             )}
           </div>
           <p className="mt-2 whitespace-pre-wrap break-words text-sm text-foreground">{content}</p>
+          {photoUrl && (
+            <div className="mt-3 rounded-lg overflow-hidden">
+              <img
+                src={photoUrl}
+                alt="记录照片"
+                className="h-32 w-full object-cover"
+              />
+            </div>
+          )}
           {children}
         </div>
         {onDelete && (

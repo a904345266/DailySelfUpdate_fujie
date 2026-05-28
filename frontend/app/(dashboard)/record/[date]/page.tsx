@@ -216,6 +216,7 @@ export default function RecordPage() {
                     content={r.content}
                     importance={r.importance}
                     onDelete={() => removePartner(r.id)}
+                    photoUrl={r.photoUrl}
                   />
                 ))}
               </RecordList>

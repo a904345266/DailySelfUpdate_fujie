@@ -39,6 +39,7 @@ export interface PartnerRecord {
   emotion: string;
   importance: number;
   resolved: boolean;
+  photoUrl: string | null;
   createdAt: string;
 }
 
@@ -126,6 +127,7 @@ export async function createPartner(input: {
   emotion: string;
   importance: number;
   resolved?: boolean;
+  photoUrl?: string;
 }): Promise<PartnerRecord> {
   const res = await api.post('/records/partner', input);
   return res.data.record;

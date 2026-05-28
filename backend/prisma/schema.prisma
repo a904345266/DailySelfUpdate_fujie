@@ -136,6 +136,7 @@ model PartnerRecord {
   emotion         String
   importance      Int      // 1-5
   resolved        Boolean  @default(false)
+  photoUrl        String?  @map("photo_url")
   createdAt       DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

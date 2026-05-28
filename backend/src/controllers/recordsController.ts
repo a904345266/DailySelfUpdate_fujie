@@ -73,6 +73,7 @@ export const partnerSchema = z.object({
   emotion: z.string().min(1).max(40),
   importance,
   resolved: z.boolean().optional(),
+  photoUrl: z.string().url().optional(),
 });
 
 export async function createPartner(req: Request, res: Response, next: NextFunction) {
