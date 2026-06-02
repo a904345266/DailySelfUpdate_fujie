@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CheckCircle, Gift, Trophy, Sparkles } from 'lucide-react';
+import { DailyQuestion } from './DailyQuestion';
 import { checkIn, getCheckInData } from '@/lib/checkInApi';
 import { extractErrorMessage } from '@/lib/api';
 
@@ -29,6 +31,7 @@ export function CheckInForm({ date, onCheckedIn }: CheckInFormProps) {
   const [checkInData, setCheckInData] = useState<CheckInData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingIn, setIsCheckingIn] = useState(false);
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
 
   const loadCheckInData = async () => {
     try {
@@ -58,6 +61,8 @@ export function CheckInForm({ date, onCheckedIn }: CheckInFormProps) {
   const handleCheckIn = async () => {
     if (checkInData?.lastCheckInDate === date) {
       toast.error('今天已经签到过了！');
+      // 即使已签到，也允许用户查看当天的题目
+      setShowQuestionModal(true);
       return;
     }
 
@@ -66,12 +71,21 @@ export function CheckInForm({ date, onCheckedIn }: CheckInFormProps) {
       const result = await checkIn();
       setCheckInData(result);
       toast.success('✅ 签到成功！能力值+5');
-      onCheckedIn();
+      
+      // 签到成功后显示题目弹窗
+      setShowQuestionModal(true);
+      
+      // 不立即调用onCheckedIn，等待用户完成题目后再调用
     } catch (err) {
       toast.error(extractErrorMessage(err, '签到失败'));
     } finally {
       setIsCheckingIn(false);
     }
+  };
+
+  const handleQuestionComplete = () => {
+    setShowQuestionModal(false);
+    onCheckedIn(); // 通知父组件数据已更新
   };
 
   if (isLoading) {
@@ -200,6 +214,19 @@ export function CheckInForm({ date, onCheckedIn }: CheckInFormProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* 每日一题弹窗 */}
+      <Dialog open={showQuestionModal} onOpenChange={setShowQuestionModal}>
+        <DialogContent className="max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
+              今日一题
+            </DialogTitle>
+          </DialogHeader>
+          <DailyQuestion date={date} onCompleted={handleQuestionComplete} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

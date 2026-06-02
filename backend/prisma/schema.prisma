@@ -40,6 +40,7 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   checkInRecords      CheckInRecord[]
+  dailyQuestionAttempts DailyQuestionAttempt[]
 
   @@map("users")
 }
@@ -54,6 +55,20 @@ model CheckInRecord {
   @@unique([userId, date])
   @@index([userId, date])
   @@map("check_in_records")
+}
+
+model DailyQuestionAttempt {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  questionId String   @map("question_id")
+  userAnswer String   @map("user_answer")
+  date       DateTime
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("daily_question_attempts")
 }
 
 model UserPreferences {
