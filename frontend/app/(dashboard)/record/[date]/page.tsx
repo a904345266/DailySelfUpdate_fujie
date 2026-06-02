@@ -11,7 +11,7 @@ import { WorkForm, WORK_CATEGORY_LABELS, WORK_EMOTION_LABELS } from '@/component
 import { FriendForm, FRIEND_INTERACTION_LABELS } from '@/components/records/FriendForm';
 import { PartnerForm, PARTNER_INTERACTION_LABELS } from '@/components/records/PartnerForm';
 import { GratitudeForm, GRATITUDE_CATEGORY_LABELS } from '@/components/records/GratitudeForm';
-import { ReflectionForm } from '@/components/records/ReflectionForm';
+import { CheckInForm } from '@/components/records/CheckInForm';
 import { RecordItem, RecordList } from '@/components/records/RecordList';
 import {
   getDailyRecords,
@@ -33,7 +33,7 @@ export default function RecordPage() {
 
   const [data, setData] = useState<DailyRecords | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'work' | 'friend' | 'partner' | 'gratitude' | 'reflection'>('work');
+  const [tab, setTab] = useState<'work' | 'friend' | 'partner' | 'gratitude' | 'checkin'>('work');
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -149,7 +149,7 @@ export default function RecordPage() {
             <TabsTrigger value="friend">朋友 {data.friends.length > 0 && `(${data.friends.length})`}</TabsTrigger>
             <TabsTrigger value="partner">伴侣 {data.partner.length > 0 && `(${data.partner.length})`}</TabsTrigger>
             <TabsTrigger value="gratitude">感恩 {data.gratitude.length > 0 && `(${data.gratitude.length})`}</TabsTrigger>
-            <TabsTrigger value="reflection">三省</TabsTrigger>
+            <TabsTrigger value="checkin">每日打卡</TabsTrigger>
           </TabsList>
 
           {/* WORK */}
@@ -242,9 +242,9 @@ export default function RecordPage() {
             </div>
           </TabsContent>
 
-          {/* REFLECTION */}
-          <TabsContent value="reflection">
-            <ReflectionForm date={date} initial={data.reflection} onSaved={load} />
+          {/* CHECK-IN */}
+          <TabsContent value="checkin">
+            <CheckInForm date={date} onCheckedIn={load} />
           </TabsContent>
         </Tabs>
       </div>

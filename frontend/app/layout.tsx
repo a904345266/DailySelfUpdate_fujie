@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'DailySelfUpdate · 每日自我更新',
@@ -28,10 +29,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: noFlashScript }} />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider>
-          {children}
-          <Toaster position="top-center" richColors theme="system" />
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider>
+            {children}
+            <Toaster position="top-center" richColors theme="system" />
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -14,6 +14,7 @@ import vipRoutes from './routes/vipRoutes';
 import booksRoutes from './routes/booksRoutes';
 import quoteRoutes from './routes/quoteRoutes';
 import textRoutes from './routes/textRoutes';
+import checkInRoutes from './routes/checkInRoutes';
 
 export function createApp() {
   const app = express();
@@ -72,6 +73,7 @@ export function createApp() {
   app.use('/api/books', booksRoutes);
   app.use('/api/quotes', quoteRoutes);
   app.use('/api/text', textRoutes);
+  app.use('/api/check-in', checkInRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
