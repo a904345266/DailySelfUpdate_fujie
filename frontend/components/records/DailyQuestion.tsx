@@ -63,9 +63,6 @@ export function DailyQuestion({ date, onCompleted }: DailyQuestionProps) {
     try {
       await submitAnswer(question!.id, answer);
       setCompleted(true);
-      setTimeout(() => {
-        onCompleted();
-      }, 1500);
     } catch (err) {
       console.error('Failed to submit answer:', err);
     }
