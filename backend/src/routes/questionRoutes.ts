@@ -12,4 +12,7 @@ router.get('/daily', c.getDailyQuestion);
 // 提交答案
 router.post('/answer', c.submitAnswer);
 
+// AI 深度解析
+router.post('/ai-analysis', c.getAiAnalysis);
+
 export default router;

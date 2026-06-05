@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, RotateCcw, Lightbulb, BookOpen } from 'lucide-react';
-import { getDailyQuestion, submitAnswer, BookRecommendation } from '@/lib/questionApi';
+import { CheckCircle, RotateCcw, Lightbulb, BookOpen, Sparkles, Loader2 } from 'lucide-react';
+import { getDailyQuestion, submitAnswer, getAiAnalysis, BookRecommendation, AiAnalysis } from '@/lib/questionApi';
 
 interface Question {
   id: string;
@@ -29,6 +29,20 @@ export function DailyQuestion({ date, onCompleted }: DailyQuestionProps) {
   const [showAnswer, setShowAnswer] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const fetchAiAnalysis = async (questionId: string, answer: string) => {
+    setAiLoading(true);
+    try {
+      const result = await getAiAnalysis(questionId, answer);
+      setAiAnalysis(result);
+    } catch (err) {
+      console.error('Failed to fetch AI analysis:', err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const loadQuestion = async () => {
     try {
@@ -39,6 +53,9 @@ export function DailyQuestion({ date, onCompleted }: DailyQuestionProps) {
       if (data.alreadyAnswered) {
         setSelectedOption(data.userAnswer || null);
         setShowAnswer(true);
+        if (data.userAnswer) {
+          fetchAiAnalysis(data.id, data.userAnswer);
+        }
       }
     } catch (err) {
       console.error('Failed to load question:', err);
@@ -60,6 +77,7 @@ export function DailyQuestion({ date, onCompleted }: DailyQuestionProps) {
     try {
       await submitAnswer(question!.id, answer);
       setCompleted(true);
+      fetchAiAnalysis(question!.id, answer);
     } catch (err) {
       console.error('Failed to submit answer:', err);
     }
@@ -180,6 +198,55 @@ export function DailyQuestion({ date, onCompleted }: DailyQuestionProps) {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {(aiLoading || aiAnalysis) && (
+                <div className="space-y-4 pt-4 border-t border-dashed">
+                  {aiLoading && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                      <span className="text-sm">AI 正在为你生成深度解析...</span>
+                    </div>
+                  )}
+
+                  {aiAnalysis && (
+                    <>
+                      <div>
+                        <h4 className="font-semibold mb-2 flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-indigo-500" />
+                          AI 深度解析
+                        </h4>
+                        <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-line">
+                          {aiAnalysis.aiAnalysis}
+                        </p>
+                      </div>
+
+                      {aiAnalysis.bookChapters.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-indigo-500" />
+                            推荐书籍章节
+                          </h4>
+                          <div className="space-y-2">
+                            {aiAnalysis.bookChapters.map((book, index) => (
+                              <div key={index} className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-indigo-500 mt-0.5">📚</span>
+                                  <div className="space-y-1">
+                                    <p className="font-medium text-sm">{book.title}</p>
+                                    <p className="text-xs text-muted-foreground">作者：{book.author}</p>
+                                    <p className="text-xs font-medium text-indigo-700">{book.chapter}</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">{book.keyPoints}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 

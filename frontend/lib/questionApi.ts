@@ -27,3 +27,20 @@ export async function getDailyQuestion(): Promise<Question> {
 export async function submitAnswer(questionId: string, answer: string): Promise<void> {
   await api.post('/questions/answer', { questionId, answer });
 }
+
+export interface BookChapter {
+  title: string;
+  author: string;
+  chapter: string;
+  keyPoints: string;
+}
+
+export interface AiAnalysis {
+  aiAnalysis: string;
+  bookChapters: BookChapter[];
+}
+
+export async function getAiAnalysis(questionId: string, userAnswer: string): Promise<AiAnalysis | null> {
+  const res = await api.post('/questions/ai-analysis', { questionId, userAnswer });
+  return res.data.analysis ?? null;
+}

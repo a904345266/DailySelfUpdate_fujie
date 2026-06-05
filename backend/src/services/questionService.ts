@@ -323,6 +323,10 @@ const QUESTION_BANK = [
   }
 ];
 
+export function getQuestionById(id: string) {
+  return QUESTION_BANK.find((q) => q.id === id) ?? null;
+}
+
 export async function getDailyQuestion(userId: string) {
   try {
     const today = new Date();
