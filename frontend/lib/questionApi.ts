@@ -1,13 +1,20 @@
 import { api } from './api';
 
+export interface BookRecommendation {
+  title: string;
+  author: string;
+  reason: string;
+}
+
 export interface Question {
   id: string;
   type: 'philosophy' | 'psychology' | 'story' | 'reflection';
   question: string;
-  options?: string[];
+  options: string[];
   answer: string;
   explanation: string;
   category: string;
+  books: BookRecommendation[];
   alreadyAnswered: boolean;
   userAnswer?: string;
 }
